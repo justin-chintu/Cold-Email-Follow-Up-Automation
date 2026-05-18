@@ -1,0 +1,2434 @@
+{
+  "name": "Cold Email + Follow-Up Automation (FIXED)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 2-6"
+            }
+          ]
+        }
+      },
+      "id": "6d4a74da-1ad8-4aea-9cd0-8a116b638a08",
+      "name": "⏰ Daily Trigger (8am, Tue–Sat)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "options": {}
+      },
+      "id": "bf62246e-86ec-47de-91b4-0882d07a6e89",
+      "name": "📋 Get New Leads (Empty Status)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json['Email'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "id": "e506b5c5-7ede-481a-bfbb-5a5c34211b0b"
+            },
+            {
+              "leftValue": "={{ $json['Email Status'] }}",
+              "rightValue": "invalid",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "id": "a5a94599-dc45-41d8-ba40-9999db68e4f9"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "442b5fc8-e4be-4031-b72b-b1fcda625327",
+      "name": "🔍 Has Valid Email?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json['Lead Quality'] }}",
+              "rightValue": "Low",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "id": "4106832d-26aa-4fe3-80ef-f3d626a5f5dc"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "401ba3f3-c77d-428f-b30b-564e71704bfc",
+      "name": "⭐ Lead Quality Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate follow-up dates for all leads\nconst items = $input.all();\nconst result = [];\n\nfor (const item of items) {\n  const now = new Date();\n  \n  // Set follow-up dates: Day 3, Day 7, Day 14\n  const followUp1Date = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));\n  const followUp2Date = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));\n  const breakupDate = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));\n  \n  result.push({\n    json: {\n      ...item.json,\n      FollowUp1Due: followUp1Date.toISOString().split('T')[0],\n      FollowUp2Due: followUp2Date.toISOString().split('T')[0],\n      BreakupDue: breakupDate.toISOString().split('T')[0]\n    }\n  });\n}\n\nreturn result;"
+      },
+      "id": "62332861-fe36-4115-9669-c944944df06b",
+      "name": "📅 Calculate Follow-Up Dates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Quick question for {{ $json['Business Name'] }} 👋",
+        "message": "=<!DOCTYPE html>\n<html>\n<body style=\"font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f5;\">\n  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding: 40px 0;\">\n    <tr>\n      <td align=\"center\">\n        <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.08);\">\n          <tr>\n            <td style=\"background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 36px 40px;\">\n              <h1 style=\"margin: 0 0 8px 0; font-size: 26px; color: #ffffff;\">BOMMU KOTESWARA RAO</h1>\n              <p style=\"margin: 0; font-size: 14px; color: rgba(255,255,255,0.8);\">Workflow Automation Specialist · n8n Developer</p>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding: 40px;\">\n              <p style=\"font-size: 16px; margin: 0 0 24px 0;\">Hi {{ $json['Business Name'] }} team,</p>\n              <p style=\"font-size: 15px; color: #475569; margin: 0 0 16px 0; line-height: 1.8;\">\n                I came across {{ $json['Business Name'] }} while researching {{ $json['Keyword Search'] }} businesses in {{ $json['Location'] }}, and I wanted to reach out about something that could save your team significant time each week.\n              </p>\n              <p style=\"font-size: 15px; color: #475569; margin: 0 0 16px 0; line-height: 1.8;\">\n                Most {{ $json['Keyword Search'] }} businesses I work with are still handling tasks like <strong>appointment confirmations, customer follow-ups, and reminder messages</strong> manually — often taking 5–10 hours per week that could be fully automated.\n              </p>\n              <div style=\"background: #f0fdf4; border-left: 4px solid #10b981; padding: 24px; margin: 28px 0;\">\n                <p style=\"font-size: 14px; font-weight: 700; color: #166534; margin: 0 0 12px 0;\">What I could automate for {{ $json['Business Name'] }}:</p>\n                <ul style=\"margin: 0; padding-left: 20px; color: #166534;\">\n                  <li style=\"margin-bottom: 8px;\">Automated appointment reminders (SMS, email, WhatsApp)</li>\n                  <li style=\"margin-bottom: 8px;\">No-show follow-up sequences that run 24/7</li>\n                  <li style=\"margin-bottom: 8px;\">New customer onboarding messages</li>\n                  <li style=\"margin-bottom: 8px;\">Review request automation after service</li>\n                </ul>\n              </div>\n              <p style=\"font-size: 15px; color: #475569; margin: 0 0 16px 0; line-height: 1.8;\">\n                I specialize in building <strong>custom n8n automation workflows</strong> — these run continuously in the background, handling repetitive tasks so your team can focus on what actually matters: your customers.\n              </p>\n              <div style=\"background: #eff6ff; border: 2px solid #3b82f6; padding: 32px; margin: 32px 0; text-align: center;\">\n                <h3 style=\"font-size: 18px; color: #1e40af; margin: 0 0 12px 0;\">Want to see how this works?</h3>\n                <p style=\"font-size: 14px; color: #1e40af; margin: 0 0 24px 0;\">I'd love to show you a quick 20-minute demo. Simply hit reply and let me know you're interested.</p>\n                <a href=\"mailto:justinautomations5@gmail.com?subject=Interested in automation for {{ $json['Business Name'] }}\" style=\"display: inline-block; background: #3b82f6; color: #ffffff; text-decoration: none; padding: 15px 40px; font-size: 14px; font-weight: 600;\">Reply to This Email</a>\n              </div>\n              <div style=\"background: #f8fafc; padding: 24px; margin: 28px 0;\">\n                <p style=\"font-size: 12px; font-weight: 600; color: #64748b; margin: 0 0 12px 0; text-transform: uppercase;\">Reach Me Directly</p>\n                <p style=\"margin: 8px 0; font-size: 14px;\">📧 <a href=\"mailto:justinautomations5@gmail.com\" style=\"color: #3b82f6; text-decoration: none;\">justinautomations5@gmail.com</a></p>\n                <p style=\"margin: 8px 0; font-size: 14px;\">📱 +91 76750 37726</p>\n              </div>\n              <div style=\"margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;\">\n                <p style=\"font-size: 15px; font-weight: 600; margin: 0 0 4px 0;\">BOMMU KOTESWARA RAO</p>\n                <p style=\"font-size: 13px; color: #64748b; margin: 0;\">Workflow Automation Specialist | {{ $json['Location'] }} Area</p>\n              </div>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"background: #f8fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;\">\n              <p style=\"font-size: 12px; color: #94a3b8; margin: 0;\">\n                You're receiving this because I believe automation could benefit {{ $json['Business Name'] }}. \n                If you'd prefer not to hear from me, simply reply with \"unsubscribe\" and I'll remove you immediately.\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "070ed0b1-862b-4496-a0bf-e4f8a1f6ba1c",
+      "name": "📧 Send Email 1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1120,
+        0
+      ],
+      "webhookId": "a980e654-1463-4ed6-b33a-884f07874b83",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vrRJ4EhJRNTpfVpY",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Outreach Status": "Email 1 Sent",
+            "Outreach Date": "={{ $now.toISO().split('T')[0] }}",
+            "Channels Used": "Email",
+            "Email Sent": "Yes",
+            "FollowUp1Due": "={{ $json.FollowUp1Due }}",
+            "FollowUp2Due": "={{ $json.FollowUp2Due }}",
+            "BreakupDue": "={{ $json.BreakupDue }}",
+            "row_number": 0,
+            "Email": "={{ $('📋 Get New Leads (Empty Status)').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Reviews",
+              "displayName": "Total Reviews",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keyword Search",
+              "displayName": "Keyword Search",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Quality",
+              "displayName": "Lead Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Google Maps Link",
+              "displayName": "Google Maps Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Place Key",
+              "displayName": "Place Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Scraped Data",
+              "displayName": "Scraped Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outreach Status",
+              "displayName": "Outreach Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outreach Date",
+              "displayName": "Outreach Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channels Used",
+              "displayName": "Channels Used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Sent",
+              "displayName": "Email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp Sent",
+              "displayName": "WhatsApp Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SMS Sent",
+              "displayName": "SMS Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp1Due",
+              "displayName": "FollowUp1Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "FollowUp2Due",
+              "displayName": "FollowUp2Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "BreakupDue",
+              "displayName": "BreakupDue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "2caa4109-1dd1-4d27-a4c0-413f0e25e661",
+      "name": "📊 Update Sheet — Email 1 Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "options": {}
+      },
+      "id": "58469181-ae02-4dbc-b641-529a7fccaae5",
+      "name": "📋 Get Follow-Up 1 Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        576
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json['FollowUp1Due'] }}",
+              "rightValue": "={{ $now.toISO().split('T')[0] }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "5c0d7e89-6e99-4fc8-9557-ef16ebb2e50c"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "eb4ee9a1-7cdf-4c56-b52d-f2ca50ac224b",
+      "name": "📅 FU1 Due Today?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        672,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Re: Quick question for {{ $json['Business Name'] }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Follow-Up Day 3</title>\n<!--[if mso]>\n<style type=\"text/css\">\nbody, table, td {font-family: Arial, Helvetica, sans-serif !important;}\n</style>\n<![endif]-->\n<style>\n  body { margin:0; padding:0; background-color:#f0f4f8; font-family: 'Georgia', 'Times New Roman', serif; -webkit-font-smoothing:antialiased; }\n  table { border-spacing:0; }\n  td { padding:0; }\n\n  .wrapper { width:100%; background:#f0f4f8; padding:40px 0; }\n  .container { max-width:600px; margin:0 auto; background:#ffffff; box-shadow:0 4px 24px rgba(0,0,0,0.10); }\n\n  /* HEADER — deep slate with amber accent line */\n  .header { background:#1a2332; padding:0; }\n  .header-accent { height:4px; background:linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%); }\n  .header-inner { padding:32px 44px 28px; }\n  .header-tag {\n    display:inline-block;\n    background:rgba(245,158,11,0.15);\n    border:1px solid rgba(245,158,11,0.4);\n    color:#fbbf24;\n    font-size:10px;\n    font-weight:700;\n    letter-spacing:2px;\n    text-transform:uppercase;\n    padding:5px 12px;\n    border-radius:2px;\n    margin-bottom:16px;\n    font-family: Arial, sans-serif;\n  }\n  .header-name { font-size:22px; font-weight:700; color:#ffffff; margin:0 0 6px 0; letter-spacing:-0.3px; font-family: Arial, sans-serif; }\n  .header-title { font-size:13px; color:rgba(255,255,255,0.55); margin:0; letter-spacing:0.5px; font-family: Arial, sans-serif; }\n\n  /* SUBJECT BANNER */\n  .subject-banner { background:#fefce8; border-bottom:2px solid #fef08a; padding:16px 44px; }\n  .subject-text { font-size:13px; color:#854d0e; font-family: Arial, sans-serif; margin:0; }\n  .subject-text strong { font-weight:700; }\n\n  /* CONTENT */\n  .content { padding:40px 44px 32px; }\n  .greeting { font-size:17px; color:#1a2332; margin:0 0 24px; font-weight:600; font-family: Arial, sans-serif; }\n\n  .body-text { font-size:14px; color:#4b5563; line-height:1.85; margin:0 0 18px; font-family: Arial, sans-serif; }\n  .body-text strong { color:#1a2332; font-weight:600; }\n\n  /* CASE STUDY BOX */\n  .case-box {\n    background:#f8fafc;\n    border:1px solid #e2e8f0;\n    border-left:4px solid #f59e0b;\n    padding:22px 26px;\n    margin:28px 0;\n    border-radius:0 4px 4px 0;\n  }\n  .case-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#f59e0b; margin:0 0 10px; font-family: Arial, sans-serif; }\n  .case-text { font-size:13px; color:#374151; line-height:1.75; margin:0; font-family: Arial, sans-serif; }\n  .case-text strong { color:#1a2332; }\n\n  /* QUESTION BLOCK */\n  .question-block { background:#1a2332; padding:28px 32px; margin:28px 0; border-radius:4px; text-align:center; }\n  .question-text { font-size:16px; color:#ffffff; font-weight:600; margin:0 0 8px; font-family: Arial, sans-serif; letter-spacing:-0.2px; }\n  .question-sub { font-size:13px; color:rgba(255,255,255,0.55); margin:0; font-family: Arial, sans-serif; }\n\n  /* REPLY BUTTON */\n  .btn-wrap { text-align:center; margin:28px 0; }\n  .btn {\n    display:inline-block;\n    background:#f59e0b;\n    color:#1a2332 !important;\n    text-decoration:none;\n    padding:14px 42px;\n    font-size:13px;\n    font-weight:700;\n    border-radius:3px;\n    letter-spacing:0.8px;\n    text-transform:uppercase;\n    font-family: Arial, sans-serif;\n  }\n\n  /* SIGNATURE */\n  .signature { margin-top:32px; padding-top:24px; border-top:1px solid #e5e7eb; }\n  .sig-name { font-size:14px; font-weight:700; color:#1a2332; margin:0 0 3px; font-family: Arial, sans-serif; }\n  .sig-title { font-size:12px; color:#6b7280; margin:0 0 10px; font-family: Arial, sans-serif; }\n  .sig-contact { font-size:12px; color:#6b7280; margin:3px 0; font-family: Arial, sans-serif; }\n  .sig-contact a { color:#f59e0b; text-decoration:none; }\n\n  /* FOOTER */\n  .footer { background:#f8fafc; border-top:1px solid #e5e7eb; padding:24px 44px; }\n  .footer-text { font-size:11px; color:#9ca3af; line-height:1.6; margin:0; font-family: Arial, sans-serif; }\n\n  @media only screen and (max-width:600px) {\n    .content, .header-inner, .subject-banner, .footer { padding-left:24px !important; padding-right:24px !important; }\n  }\n</style>\n</head>\n<body>\n<table class=\"wrapper\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr><td align=\"center\">\n    <table class=\"container\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\">\n\n      <!-- HEADER -->\n      <tr><td class=\"header\">\n        <div class=\"header-accent\"></div>\n        <div class=\"header-inner\">\n          <div class=\"header-tag\">Follow-Up · Day 3</div>\n          <div class=\"header-name\">Bommu Koteswara Rao</div>\n          <div class=\"header-title\">Workflow Automation Specialist · n8n Developer</div>\n        </div>\n      </td></tr>\n\n      <!-- SUBJECT BANNER -->\n      <tr><td class=\"subject-banner\">\n        <p class=\"subject-text\">📬 Following up on my note to <strong>{{ $json['Business Name'] }}</strong> from a few days ago</p>\n      </td></tr>\n\n      <!-- CONTENT -->\n      <tr><td class=\"content\">\n\n        <p class=\"greeting\">Hi {{ $json['Business Name'] }} team,</p>\n\n        <p class=\"body-text\">\n          I reached out a few days ago about automating repetitive tasks for your \n          <strong>{{ $json['Keyword Search'] }}</strong> business in <strong>{{ $json['Location'] }}</strong> — \n          I wanted to follow up in case my previous email got buried.\n        </p>\n\n        <p class=\"body-text\">\n          I completely understand — inboxes get full. So I'll keep this short.\n        </p>\n\n        <!-- CASE STUDY -->\n        <div class=\"case-box\">\n          <p class=\"case-label\">Real Result · Similar Business</p>\n          <p class=\"case-text\">\n            A {{ $json['Keyword Search'] }} business similar to <strong>{{ $json['Business Name'] }}</strong> \n            recently automated their appointment reminders and follow-up sequences. Within 3 weeks they \n            recovered <strong>12 hours per week</strong> of staff time and saw a <strong>30% reduction \n            in no-shows</strong> — all running automatically in the background.\n          </p>\n        </div>\n\n        <p class=\"body-text\">\n          I believe I could build something similar for <strong>{{ $json['Business Name'] }}</strong> — \n          customised specifically around how your team operates day-to-day.\n        </p>\n\n        <!-- QUESTION BLOCK -->\n        <div class=\"question-block\">\n          <p class=\"question-text\">Is saving 10+ hours per week worth a 20-minute conversation?</p>\n          <p class=\"question-sub\">No pitch decks. Just a direct, honest conversation.</p>\n        </div>\n\n        <p class=\"body-text\">\n          Simply reply to this email with <strong>\"Let's talk\"</strong> and I'll send over a few \n          time slots that work around your schedule.\n        </p>\n\n        <div class=\"btn-wrap\">\n          <a href=\"mailto:justinautomations5@gmail.com?subject=Let's talk - {{ $json['Business Name'] }}\" class=\"btn\">\n            Reply Now\n          </a>\n        </div>\n\n        <!-- SIGNATURE -->\n        <div class=\"signature\">\n          <p class=\"sig-name\">Bommu Koteswara Rao</p>\n          <p class=\"sig-title\">Workflow Automation Specialist | {{ $json['Location'] }} Area</p>\n          <p class=\"sig-contact\">📧 <a href=\"mailto:justinautomations5@gmail.com\">justinautomations5@gmail.com</a></p>\n          <p class=\"sig-contact\">📱 +91 76750 37726</p>\n        </div>\n\n      </td></tr>\n\n      <!-- FOOTER -->\n      <tr><td class=\"footer\">\n        <p class=\"footer-text\">\n          This is a follow-up to my earlier message to {{ $json['Business Name'] }}. \n          If you'd prefer not to hear from me, simply reply \"unsubscribe\" and I'll remove you immediately — no hard feelings.\n        </p>\n      </td></tr>\n\n    </table>\n  </td></tr>\n</table>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4f705fbe-fe24-42c3-af1b-6bcfede6d586",
+      "name": "📧 Send Follow-Up 1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        576
+      ],
+      "webhookId": "628b9a24-0bfb-45d9-9eb8-c526033cfe3e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vrRJ4EhJRNTpfVpY",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Outreach Status": "Follow-Up 1 Sent",
+            "Outreach Date": "={{ $now.toISO().split('T')[0] }}",
+            "row_number": 0,
+            "Email": "={{ $('📋 Get New Leads (Empty Status)').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Reviews",
+              "displayName": "Total Reviews",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keyword Search",
+              "displayName": "Keyword Search",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Quality",
+              "displayName": "Lead Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Google Maps Link",
+              "displayName": "Google Maps Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Place Key",
+              "displayName": "Place Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Scraped Data",
+              "displayName": "Scraped Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outreach Status",
+              "displayName": "Outreach Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outreach Date",
+              "displayName": "Outreach Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channels Used",
+              "displayName": "Channels Used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Sent",
+              "displayName": "Email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "WhatsApp Sent",
+              "displayName": "WhatsApp Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SMS Sent",
+              "displayName": "SMS Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp1Due",
+              "displayName": "FollowUp1Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp2Due",
+              "displayName": "FollowUp2Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "BreakupDue",
+              "displayName": "BreakupDue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b1a52c5b-0a12-4775-8773-2dac159ba5df",
+      "name": "📊 Update Sheet — FU1 Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        576
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "options": {}
+      },
+      "id": "c81cf6f0-66c5-4e79-b604-786720627c88",
+      "name": "📋 Get Follow-Up 2 Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "leftValue": "={{ $json['FollowUp2Due'] }}",
+              "rightValue": "={{ $now.toISO().split('T')[0] }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "85f942b4-11e4-44da-98b8-896e453b0a77",
+      "name": "📅 FU2 Due Today?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        672,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Last note — {{ $json['Business Name'] }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Follow-Up Day 7</title>\n<!--[if mso]>\n<style type=\"text/css\">\nbody, table, td {font-family: Arial, Helvetica, sans-serif !important;}\n</style>\n<![endif]-->\n<style>\n  body { margin:0; padding:0; background-color:#f5f3ff; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }\n  table { border-spacing:0; }\n  td { padding:0; }\n\n  .wrapper { width:100%; background:#f5f3ff; padding:40px 0; }\n  .container { max-width:600px; margin:0 auto; background:#ffffff; box-shadow:0 4px 24px rgba(0,0,0,0.10); }\n\n  /* HEADER — deep navy with teal accent */\n  .header { background:linear-gradient(160deg, #0f2342 0%, #162d4a 100%); padding:36px 44px; position:relative; }\n  .header-day-badge {\n    display:inline-block;\n    background:linear-gradient(135deg, #06b6d4, #0891b2);\n    color:#ffffff;\n    font-size:10px;\n    font-weight:700;\n    letter-spacing:2px;\n    text-transform:uppercase;\n    padding:5px 14px;\n    border-radius:99px;\n    margin-bottom:16px;\n  }\n  .header-name { font-size:22px; font-weight:700; color:#ffffff; margin:0 0 6px; letter-spacing:-0.3px; }\n  .header-title { font-size:13px; color:rgba(255,255,255,0.5); margin:0; letter-spacing:0.4px; }\n  .header-divider { height:1px; background:rgba(255,255,255,0.1); margin:20px 0 0; }\n\n  /* CONTENT */\n  .content { padding:40px 44px 32px; }\n  .greeting { font-size:17px; color:#0f2342; margin:0 0 22px; font-weight:700; }\n  .body-text { font-size:14px; color:#4b5563; line-height:1.85; margin:0 0 18px; }\n  .body-text strong { color:#0f2342; font-weight:600; }\n\n  /* COST OF INACTION BOX */\n  .cost-box {\n    background:#fef2f2;\n    border:1px solid #fecaca;\n    border-left:4px solid #ef4444;\n    padding:22px 26px;\n    margin:26px 0;\n    border-radius:0 4px 4px 0;\n  }\n  .cost-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ef4444; margin:0 0 12px; }\n  .cost-list { margin:0; padding-left:18px; }\n  .cost-list li { font-size:13px; color:#374151; line-height:1.8; margin-bottom:6px; }\n  .cost-list li strong { color:#0f2342; }\n\n  /* WHAT I OFFER GRID */\n  .offer-grid { margin:26px 0; }\n  .offer-row { display:flex; gap:16px; margin-bottom:12px; }\n  .offer-item {\n    flex:1;\n    background:#f0f9ff;\n    border:1px solid #bae6fd;\n    padding:16px 18px;\n    border-radius:6px;\n    text-align:center;\n  }\n  .offer-icon { font-size:22px; margin-bottom:6px; }\n  .offer-title { font-size:12px; font-weight:700; color:#0f2342; margin:0 0 4px; }\n  .offer-desc { font-size:11px; color:#6b7280; margin:0; line-height:1.5; }\n\n  /* CTA STRIP */\n  .cta-strip {\n    background:linear-gradient(135deg, #0f2342 0%, #162d4a 100%);\n    padding:28px 32px;\n    margin:28px 0;\n    border-radius:6px;\n    text-align:center;\n  }\n  .cta-heading { font-size:17px; font-weight:700; color:#ffffff; margin:0 0 10px; letter-spacing:-0.2px; }\n  .cta-sub { font-size:13px; color:rgba(255,255,255,0.6); margin:0 0 22px; line-height:1.6; }\n  .cta-btn {\n    display:inline-block;\n    background:linear-gradient(135deg, #06b6d4, #0891b2);\n    color:#ffffff !important;\n    text-decoration:none;\n    padding:13px 38px;\n    font-size:13px;\n    font-weight:700;\n    border-radius:99px;\n    letter-spacing:0.5px;\n  }\n  .cta-note { font-size:11px; color:rgba(255,255,255,0.4); margin:14px 0 0; font-style:italic; }\n\n  /* SIGNATURE */\n  .signature { margin-top:32px; padding-top:22px; border-top:1px solid #e5e7eb; }\n  .sig-name { font-size:14px; font-weight:700; color:#0f2342; margin:0 0 3px; }\n  .sig-title { font-size:12px; color:#6b7280; margin:0 0 10px; }\n  .sig-contact { font-size:12px; color:#6b7280; margin:3px 0; }\n  .sig-contact a { color:#0891b2; text-decoration:none; }\n\n  /* FOOTER */\n  .footer { background:#f9fafb; border-top:1px solid #e5e7eb; padding:22px 44px; }\n  .footer-text { font-size:11px; color:#9ca3af; line-height:1.6; margin:0; }\n\n  @media only screen and (max-width:600px) {\n    .content, .header, .footer { padding-left:24px !important; padding-right:24px !important; }\n    .offer-row { flex-direction:column; }\n  }\n</style>\n</head>\n<body>\n<table class=\"wrapper\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr><td align=\"center\">\n    <table class=\"container\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\">\n\n      <!-- HEADER -->\n      <tr><td class=\"header\">\n        <div class=\"header-day-badge\">Follow-Up · Day 7</div>\n        <div class=\"header-name\">Bommu Koteswara Rao</div>\n        <div class=\"header-title\">Workflow Automation Specialist · n8n Developer</div>\n        <div class=\"header-divider\"></div>\n      </td></tr>\n\n      <!-- CONTENT -->\n      <tr><td class=\"content\">\n\n        <p class=\"greeting\">Hi {{ $json['Business Name'] }},</p>\n\n        <p class=\"body-text\">\n          I've reached out twice now about automating workflows for your \n          <strong>{{ $json['Keyword Search'] }}</strong> business in <strong>{{ $json['Location'] }}</strong>. \n          I won't keep nudging — but before I close the loop, I wanted to share one more thought.\n        </p>\n\n        <p class=\"body-text\">\n          Every week without automation is a week your team is spending hours on tasks a system \n          could handle for you automatically:\n        </p>\n\n        <!-- COST OF INACTION -->\n        <div class=\"cost-box\">\n          <p class=\"cost-label\">⏱ What Manual Work Is Costing You Weekly</p>\n          <ul class=\"cost-list\">\n            <li>Manually calling or texting appointment reminders — <strong>2–3 hrs/week</strong></li>\n            <li>Chasing no-shows and rescheduling — <strong>1–2 hrs/week</strong></li>\n            <li>Following up with new enquiries one by one — <strong>2–4 hrs/week</strong></li>\n            <li>Sending review requests after jobs — <strong>1 hr/week</strong></li>\n          </ul>\n        </div>\n\n        <p class=\"body-text\">\n          That's <strong>6–10 hours every week</strong> that could run on autopilot — \n          giving your team back their time to focus on actual {{ $json['Keyword Search'] }} work.\n        </p>\n\n        <!-- OFFER GRID (table-based for email safety) -->\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:24px 0;\">\n          <tr>\n            <td width=\"48%\" style=\"background:#f0f9ff;border:1px solid #bae6fd;padding:18px;border-radius:6px;text-align:center;vertical-align:top;\">\n              <div style=\"font-size:24px;margin-bottom:8px;\">⚡</div>\n              <div style=\"font-size:12px;font-weight:700;color:#0f2342;margin-bottom:4px;\">Fast Setup</div>\n              <div style=\"font-size:11px;color:#6b7280;line-height:1.5;\">Most workflows live within 5–7 days</div>\n            </td>\n            <td width=\"4%\"></td>\n            <td width=\"48%\" style=\"background:#f0f9ff;border:1px solid #bae6fd;padding:18px;border-radius:6px;text-align:center;vertical-align:top;\">\n              <div style=\"font-size:24px;margin-bottom:8px;\">🔒</div>\n              <div style=\"font-size:12px;font-weight:700;color:#0f2342;margin-bottom:4px;\">No Lock-in</div>\n              <div style=\"font-size:11px;color:#6b7280;line-height:1.5;\">No long-term contracts, ever</div>\n            </td>\n          </tr>\n          <tr><td colspan=\"3\" style=\"padding-top:12px;\"></td></tr>\n          <tr>\n            <td width=\"48%\" style=\"background:#f0f9ff;border:1px solid #bae6fd;padding:18px;border-radius:6px;text-align:center;vertical-align:top;\">\n              <div style=\"font-size:24px;margin-bottom:8px;\">🎯</div>\n              <div style=\"font-size:12px;font-weight:700;color:#0f2342;margin-bottom:4px;\">Custom Built</div>\n              <div style=\"font-size:11px;color:#6b7280;line-height:1.5;\">Built around how you work, not a template</div>\n            </td>\n            <td width=\"4%\"></td>\n            <td width=\"48%\" style=\"background:#f0f9ff;border:1px solid #bae6fd;padding:18px;border-radius:6px;text-align:center;vertical-align:top;\">\n              <div style=\"font-size:24px;margin-bottom:8px;\">📈</div>\n              <div style=\"font-size:12px;font-weight:700;color:#0f2342;margin-bottom:4px;\">Proven ROI</div>\n              <div style=\"font-size:11px;color:#6b7280;line-height:1.5;\">Most clients see returns within month one</div>\n            </td>\n          </tr>\n        </table>\n\n        <!-- CTA STRIP -->\n        <div class=\"cta-strip\">\n          <p class=\"cta-heading\">One conversation could change how {{ $json['Business Name'] }} operates</p>\n          <p class=\"cta-sub\">20 minutes. No obligation. Just a clear picture of what's possible.</p>\n          <a href=\"mailto:justinautomations5@gmail.com?subject=Interested - {{ $json['Business Name'] }} Day 7\" class=\"cta-btn\">\n            Let's Talk Automation\n          </a>\n          <p class=\"cta-note\">Hit reply or click above — whichever is easier</p>\n        </div>\n\n        <!-- SIGNATURE -->\n        <div class=\"signature\">\n          <p class=\"sig-name\">Bommu Koteswara Rao</p>\n          <p class=\"sig-title\">Workflow Automation Specialist | {{ $json['Location'] }} Area</p>\n          <p class=\"sig-contact\">📧 <a href=\"mailto:justinautomations5@gmail.com\">justinautomations5@gmail.com</a></p>\n          <p class=\"sig-contact\">📱 +91 76750 37726</p>\n        </div>\n\n      </td></tr>\n\n      <!-- FOOTER -->\n      <tr><td class=\"footer\">\n        <p class=\"footer-text\">\n          This is follow-up #2 to {{ $json['Business Name'] }}. I respect your time and inbox — \n          reply \"unsubscribe\" at any time and I'll remove you immediately.\n        </p>\n      </td></tr>\n\n    </table>\n  </td></tr>\n</table>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e8ee6a3b-b5a7-4cea-93ac-d8e6a298faea",
+      "name": "📧 Send Follow-Up 2",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        384
+      ],
+      "webhookId": "eaaf77ba-ad10-4e37-91cc-97a9cbdcf0b8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vrRJ4EhJRNTpfVpY",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Outreach Status": "Follow-Up 2 Sent",
+            "Outreach Date": "={{ $now.toISO().split('T')[0] }}",
+            "row_number": 0,
+            "Email": "={{ $('📋 Get New Leads (Empty Status)').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Reviews",
+              "displayName": "Total Reviews",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keyword Search",
+              "displayName": "Keyword Search",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Quality",
+              "displayName": "Lead Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Google Maps Link",
+              "displayName": "Google Maps Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Place Key",
+              "displayName": "Place Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Scraped Data",
+              "displayName": "Scraped Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outreach Status",
+              "displayName": "Outreach Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outreach Date",
+              "displayName": "Outreach Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channels Used",
+              "displayName": "Channels Used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Sent",
+              "displayName": "Email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "WhatsApp Sent",
+              "displayName": "WhatsApp Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SMS Sent",
+              "displayName": "SMS Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp1Due",
+              "displayName": "FollowUp1Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp2Due",
+              "displayName": "FollowUp2Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "BreakupDue",
+              "displayName": "BreakupDue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5062397c-a726-46e5-9a54-ef0b7363a0ed",
+      "name": "📊 Update Sheet — FU2 Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "options": {}
+      },
+      "id": "25e089d4-5b5d-47b8-b841-1e2bf587b29c",
+      "name": "📋 Get Breakup Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "leftValue": "={{ $json['BreakupDue'] }}",
+              "rightValue": "={{ $now.toISO().split('T')[0] }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8a06696e-3187-40ec-9408-4007b967531a",
+      "name": "📅 Breakup Due Today?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Closing the loop — {{ $json['Business Name'] }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Follow-Up Day 14</title>\n<!--[if mso]>\n<style type=\"text/css\">\nbody, table, td {font-family: Arial, Helvetica, sans-serif !important;}\n</style>\n<![endif]-->\n<style>\n  body { margin:0; padding:0; background-color:#f1f5f9; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }\n  table { border-spacing:0; }\n  td { padding:0; }\n\n  .wrapper { width:100%; background:#f1f5f9; padding:40px 0; }\n  .container { max-width:600px; margin:0 auto; background:#ffffff; box-shadow:0 4px 24px rgba(0,0,0,0.10); }\n\n  /* HEADER — dark charcoal, elegant minimal */\n  .header { background:#18181b; padding:36px 44px; }\n  .header-eyebrow {\n    font-size:10px;\n    font-weight:700;\n    letter-spacing:3px;\n    text-transform:uppercase;\n    color:rgba(255,255,255,0.35);\n    margin:0 0 14px;\n  }\n  .header-name { font-size:22px; font-weight:700; color:#ffffff; margin:0 0 6px; letter-spacing:-0.3px; }\n  .header-title { font-size:13px; color:rgba(255,255,255,0.45); margin:0; }\n  .header-line { height:1px; background:linear-gradient(90deg, #6366f1 0%, transparent 100%); margin-top:24px; }\n\n  /* FINAL NOTICE BADGE */\n  .notice-bar { background:#fafafa; border-bottom:1px solid #e4e4e7; padding:14px 44px; }\n  .notice-badge {\n    display:inline-block;\n    background:#18181b;\n    color:#ffffff;\n    font-size:10px;\n    font-weight:700;\n    letter-spacing:1.5px;\n    text-transform:uppercase;\n    padding:4px 12px;\n    border-radius:2px;\n  }\n  .notice-text { display:inline; font-size:12px; color:#71717a; margin-left:10px; }\n\n  /* CONTENT */\n  .content { padding:40px 44px 32px; }\n  .greeting { font-size:17px; color:#18181b; margin:0 0 22px; font-weight:700; }\n  .body-text { font-size:14px; color:#52525b; line-height:1.85; margin:0 0 18px; }\n  .body-text strong { color:#18181b; font-weight:600; }\n\n  /* HONEST BLOCK */\n  .honest-box {\n    background:#fafafa;\n    border:1px solid #e4e4e7;\n    padding:24px 28px;\n    margin:26px 0;\n    border-radius:4px;\n  }\n  .honest-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#6366f1; margin:0 0 12px; }\n  .honest-text { font-size:14px; color:#3f3f46; line-height:1.8; margin:0; }\n\n  /* WHAT THEY'RE MISSING — minimalist list */\n  .missing-list { margin:0; padding:0; list-style:none; }\n  .missing-list li {\n    font-size:13px;\n    color:#52525b;\n    padding:10px 0;\n    border-bottom:1px solid #f4f4f5;\n    display:flex;\n    align-items:flex-start;\n    gap:10px;\n    line-height:1.6;\n  }\n  .missing-list li:last-child { border-bottom:none; }\n  .missing-dot { color:#6366f1; font-weight:700; flex-shrink:0; }\n\n  /* DOOR OPEN BOX */\n  .door-box {\n    background:linear-gradient(135deg, #18181b 0%, #27272a 100%);\n    padding:30px 36px;\n    margin:28px 0;\n    border-radius:6px;\n    text-align:center;\n  }\n  .door-heading { font-size:16px; font-weight:700; color:#ffffff; margin:0 0 10px; letter-spacing:-0.2px; }\n  .door-sub { font-size:13px; color:rgba(255,255,255,0.55); margin:0 0 22px; line-height:1.65; }\n  .door-btn {\n    display:inline-block;\n    background:#6366f1;\n    color:#ffffff !important;\n    text-decoration:none;\n    padding:13px 36px;\n    font-size:13px;\n    font-weight:700;\n    border-radius:4px;\n    letter-spacing:0.3px;\n  }\n  .door-note { font-size:11px; color:rgba(255,255,255,0.3); margin:14px 0 0; font-style:italic; }\n\n  /* CLOSING NOTE */\n  .closing-note {\n    background:#f4f4f5;\n    border-radius:4px;\n    padding:18px 22px;\n    margin:24px 0;\n    font-size:13px;\n    color:#71717a;\n    line-height:1.7;\n    font-style:italic;\n  }\n  .closing-note strong { color:#18181b; font-style:normal; }\n\n  /* SIGNATURE */\n  .signature { margin-top:28px; padding-top:22px; border-top:1px solid #e4e4e7; }\n  .sig-name { font-size:14px; font-weight:700; color:#18181b; margin:0 0 3px; }\n  .sig-title { font-size:12px; color:#71717a; margin:0 0 10px; }\n  .sig-contact { font-size:12px; color:#71717a; margin:3px 0; }\n  .sig-contact a { color:#6366f1; text-decoration:none; }\n\n  /* FOOTER */\n  .footer { background:#fafafa; border-top:1px solid #e4e4e7; padding:22px 44px; }\n  .footer-text { font-size:11px; color:#a1a1aa; line-height:1.6; margin:0; }\n\n  @media only screen and (max-width:600px) {\n    .content, .header, .notice-bar, .footer { padding-left:24px !important; padding-right:24px !important; }\n  }\n</style>\n</head>\n<body>\n<table class=\"wrapper\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr><td align=\"center\">\n    <table class=\"container\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\">\n\n      <!-- HEADER -->\n      <tr><td class=\"header\">\n        <p class=\"header-eyebrow\">Final Follow-Up · Day 14</p>\n        <div class=\"header-name\">Bommu Koteswara Rao</div>\n        <div class=\"header-title\">Workflow Automation Specialist · n8n Developer</div>\n        <div class=\"header-line\"></div>\n      </td></tr>\n\n      <!-- NOTICE BAR -->\n      <tr><td class=\"notice-bar\">\n        <span class=\"notice-badge\">Last Message</span>\n        <span class=\"notice-text\">I'll respect your inbox after this — promise.</span>\n      </td></tr>\n\n      <!-- CONTENT -->\n      <tr><td class=\"content\">\n\n        <p class=\"greeting\">Hi {{ $json['Business Name'] }},</p>\n\n        <p class=\"body-text\">\n          I've sent a few messages now about helping <strong>{{ $json['Business Name'] }}</strong> \n          automate time-consuming tasks in your <strong>{{ $json['Keyword Search'] }}</strong> \n          operation — and I haven't heard back.\n        </p>\n\n        <p class=\"body-text\">\n          This will be my last email. I don't want to be a nuisance, and I completely \n          respect that the timing might just not be right for you.\n        </p>\n\n        <!-- HONEST BLOCK -->\n        <div class=\"honest-box\">\n          <p class=\"honest-label\">One Last Honest Thought</p>\n          <p class=\"honest-text\">\n            Businesses that automate their customer communication and follow-up workflows \n            <strong>right now</strong> will have a meaningful operational advantage over those \n            that continue doing it manually. I've seen this play out consistently across \n            {{ $json['Keyword Search'] }} businesses in {{ $json['Location'] }} and beyond.\n          </p>\n        </div>\n\n        <p class=\"body-text\">By not automating, here's what {{ $json['Business Name'] }} continues to carry:</p>\n\n        <!-- MISSING LIST -->\n        <ul class=\"missing-list\">\n          <li><span class=\"missing-dot\">→</span> Staff time spent on manual reminders and follow-ups every single week</li>\n          <li><span class=\"missing-dot\">→</span> Leads going cold because response time is too slow</li>\n          <li><span class=\"missing-dot\">→</span> No-shows that could have been prevented with automated reminders</li>\n          <li><span class=\"missing-dot\">→</span> Reviews left unasked — and revenue left on the table</li>\n        </ul>\n\n        <p class=\"body-text\" style=\"margin-top:22px;\">\n          I could fix all of that for <strong>{{ $json['Business Name'] }}</strong> — \n          built specifically around how your business runs.\n        </p>\n\n        <!-- DOOR OPEN BOX -->\n        <div class=\"door-box\">\n          <p class=\"door-heading\">The door stays open — whenever you're ready</p>\n          <p class=\"door-sub\">\n            If circumstances change and you'd like to explore what automation could look like \n            for {{ $json['Business Name'] }}, I'm one reply away.\n          </p>\n          <a href=\"mailto:justinautomations5@gmail.com?subject=Ready to talk - {{ $json['Business Name'] }}\" class=\"door-btn\">\n            Reach Out Anytime\n          </a>\n          <p class=\"door-note\">No expiry on this offer. Reach out whenever the time is right.</p>\n        </div>\n\n        <!-- CLOSING NOTE -->\n        <div class=\"closing-note\">\n          If now genuinely isn't the right time — <strong>no hard feelings at all</strong>. \n          I wish {{ $json['Business Name'] }} and your team every success in {{ $json['Location'] }}. \n          You're building something in a competitive space, and that takes real dedication.\n        </div>\n\n        <p class=\"body-text\">Wishing you all the best,</p>\n\n        <!-- SIGNATURE -->\n        <div class=\"signature\">\n          <p class=\"sig-name\">Bommu Koteswara Rao</p>\n          <p class=\"sig-title\">Workflow Automation Specialist | {{ $json['Location'] }} Area</p>\n          <p class=\"sig-contact\">📧 <a href=\"mailto:justinautomations5@gmail.com\">justinautomations5@gmail.com</a></p>\n          <p class=\"sig-contact\">📱 +91 76750 37726</p>\n        </div>\n\n      </td></tr>\n\n      <!-- FOOTER -->\n      <tr><td class=\"footer\">\n        <p class=\"footer-text\">\n          This is my final follow-up to {{ $json['Business Name'] }}. You will not hear from me again \n          unless you choose to reach out. To confirm removal from any future outreach, simply reply \"unsubscribe.\"\n        </p>\n      </td></tr>\n\n    </table>\n  </td></tr>\n</table>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "23310072-1e60-4de3-9563-7a481beb2553",
+      "name": "📧 Send Breakup Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        192
+      ],
+      "webhookId": "bf632136-be8f-4d61-9d67-2d7e883f01b8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vrRJ4EhJRNTpfVpY",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs",
+          "mode": "list",
+          "cachedResultName": "Copy of chintu's leads experimental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 347594701,
+          "mode": "list",
+          "cachedResultName": "Chintu's Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UGWh4EKq4E9hsPp0WA7ITtvFbZU1NwNo5632p-GGHZs/edit#gid=347594701"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Outreach Status": "Sequence Complete",
+            "Outreach Date": "={{ $now.toISO().split('T')[0] }}",
+            "row_number": 0,
+            "Email": "={{ $('📋 Get New Leads (Empty Status)').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Reviews",
+              "displayName": "Total Reviews",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keyword Search",
+              "displayName": "Keyword Search",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Quality",
+              "displayName": "Lead Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Google Maps Link",
+              "displayName": "Google Maps Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Place Key",
+              "displayName": "Place Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Scraped Data",
+              "displayName": "Scraped Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outreach Status",
+              "displayName": "Outreach Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outreach Date",
+              "displayName": "Outreach Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channels Used",
+              "displayName": "Channels Used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Sent",
+              "displayName": "Email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "WhatsApp Sent",
+              "displayName": "WhatsApp Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SMS Sent",
+              "displayName": "SMS Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp1Due",
+              "displayName": "FollowUp1Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FollowUp2Due",
+              "displayName": "FollowUp2Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "BreakupDue",
+              "displayName": "BreakupDue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a7ad8577-a89c-48fe-a937-c8a43bebd82e",
+      "name": "📊 Update Sheet — Sequence Complete",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GUvRYqWys11E6CMz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        0
+      ],
+      "id": "15a9f468-4ac0-4026-b413-5a9b8008e12a",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "sendTo": "koteswararaobommu4@gmail.com",
+        "subject": "=🟢 [Day Report] Cold Emails Sent — {{ $now.toFormat('dd MMM yyyy') }},",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Day 1 Report — Email 1 Sent</title>\n<!--[if mso]>\n<style type=\"text/css\">\nbody, table, td {font-family: Arial, Helvetica, sans-serif !important;}\n</style>\n<![endif]-->\n<style>\n  body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background:#f7f8fa; }\n  table { border-spacing:0; }\n  td { padding:0; }\n  img { border:0; display:block; }\n  .wrapper { width:100%; table-layout:fixed; background:#f7f8fa; padding:40px 0; }\n  .main { margin:0 auto; width:100%; max-width:600px; background:#ffffff; box-shadow:0 4px 20px rgba(0,0,0,0.08); }\n  \n  /* Header gradient */\n  .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding:32px 28px; }\n  .header-icon { font-size:28px; margin-bottom:8px; }\n  .header-title { margin:0; font-size:26px; font-weight:700; color:#ffffff; letter-spacing:-0.5px; line-height:1.2; }\n  .header-date { margin:6px 0 0 0; font-size:13px; color:rgba(255,255,255,0.85); letter-spacing:0.3px; }\n  \n  /* Stats bar */\n  .stats { background:#f9fafb; border-bottom:1px solid #e5e7eb; padding:24px 28px; }\n  .stats-grid { display:flex; justify-content:space-between; gap:16px; }\n  .stat { text-align:center; flex:1; }\n  .stat-num { margin:0 0 4px 0; font-size:36px; font-weight:800; color:#10b981; line-height:1; }\n  .stat-label { margin:0; font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:1px; font-weight:600; }\n  \n  /* Section */\n  .section { padding:28px 28px 20px 28px; }\n  .section-title { margin:0 0 18px 0; font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:1.2px; }\n  \n  /* Lead card */\n  .lead-card { background:#f9fafb; border-left:4px solid #10b981; padding:16px 18px; margin-bottom:12px; border-radius:6px; }\n  .lead-name { margin:0 0 6px 0; font-size:16px; font-weight:700; color:#111827; line-height:1.3; }\n  .lead-meta { margin:0 0 6px 0; font-size:13px; color:#6b7280; line-height:1.5; }\n  .lead-email { margin:0; font-size:12px; color:#9ca3af; font-family:'Courier New', monospace; letter-spacing:0.2px; }\n  \n  /* Alert box */\n  .alert { background:#f0fdf4; border-left:4px solid #10b981; padding:18px 20px; margin:0 28px 24px 28px; border-radius:6px; }\n  .alert-title { margin:0 0 8px 0; font-size:14px; font-weight:700; color:#166534; }\n  .alert-list { margin:0; padding-left:20px; }\n  .alert-list li { font-size:13px; color:#166534; margin-bottom:6px; line-height:1.6; }\n  \n  /* Footer */\n  .footer { background:#f9fafb; padding:24px 28px; text-align:center; border-top:1px solid #e5e7eb; }\n  .footer-text { margin:0; font-size:12px; color:#9ca3af; }\n  .footer-badge { display:inline-block; background:#10b981; color:#ffffff; font-size:9px; font-weight:700; letter-spacing:1px; padding:4px 10px; margin-top:10px; border-radius:3px; text-transform:uppercase; }\n</style>\n</head>\n<body>\n<center class=\"wrapper\">\n  <table class=\"main\" width=\"600\">\n    <!-- HEADER -->\n    <tr>\n      <td class=\"header\">\n        <div class=\"header-icon\">📧</div>\n        <h1 class=\"header-title\">Email 1 — Initial Outreach</h1>\n        <p class=\"header-date\">{{ $now.toFormat('EEEE, dd MMMM yyyy · HH:mm') }}</p>\n      </td>\n    </tr>\n    \n    <!-- STATS -->\n    <tr>\n      <td class=\"stats\">\n        <div class=\"stats-grid\">\n          <div class=\"stat\">\n            <p class=\"stat-num\">{{ $input.all().length }}</p>\n            <p class=\"stat-label\">Emails Sent</p>\n          </div>\n          <div class=\"stat\">\n            <p class=\"stat-num\">Day 1</p>\n            <p class=\"stat-label\">Stage</p>\n          </div>\n          <div class=\"stat\">\n            <p class=\"stat-num\">+3 Days</p>\n            <p class=\"stat-label\">Next FU</p>\n          </div>\n        </div>\n      </td>\n    </tr>\n    \n    <!-- LEADS SECTION -->\n    <tr>\n      <td class=\"section\">\n        <p class=\"section-title\">Leads Contacted Today</p>\n        {{ $input.all().map(item => `\n          <div class=\"lead-card\">\n            <p class=\"lead-name\">${item.json['Business Name']}</p>\n            <p class=\"lead-meta\">📍 ${item.json['Location'] || 'Location not specified'} · ${item.json['Keyword Search'] || 'Industry unknown'}</p>\n            <p class=\"lead-email\">${item.json['Email']}</p>\n          </div>\n        `).join('') }}\n      </td>\n    </tr>\n    \n    <!-- NEXT STEPS -->\n    <tr>\n      <td>\n        <div class=\"alert\">\n          <h3 class=\"alert-title\">✅ What Happens Next</h3>\n          <ul class=\"alert-list\">\n            <li>Follow-Up 1 will fire in <strong>3 days</strong> (Day 3)</li>\n            <li>Check your inbox for any early replies</li>\n            <li>If someone replies → update <strong>Outreach Status</strong> to 'Replied' in your sheet</li>\n          </ul>\n        </div>\n      </td>\n    </tr>\n    \n    <!-- FOOTER -->\n    <tr>\n      <td class=\"footer\">\n        <p class=\"footer-text\">Chintu's Automation · Running on Schedule</p>\n        <span class=\"footer-badge\">Powered by NexaFlow</span>\n      </td>\n    </tr>\n  </table>\n</center>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        0
+      ],
+      "id": "25000b3b-c3a9-49d0-b1c0-75760a5a9832",
+      "name": "Send a message",
+      "webhookId": "27f2144f-7274-44ec-8f75-1808603d85c9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KtpyNB3xehNN60Vf",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        576
+      ],
+      "id": "05e8a854-05dd-448d-84bd-7ef10386e11a",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        384
+      ],
+      "id": "eee39adf-78ce-44e8-8f82-c13926f453c9",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        192
+      ],
+      "id": "d81a82df-0426-447b-b937-c9c7fe752217",
+      "name": "Aggregate3"
+    },
+    {
+      "parameters": {
+        "sendTo": "koteswararaobommu4@gmail.com",
+        "subject": "=🔵 [Day Report] Follow-Up 1 Sent — {{ $now.toFormat('dd MMM yyyy') }}",
+        "message": "=<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> <title>Day 3 Report — Follow-Up 1 Sent</title> <!--[if mso]> <style type=\"text/css\"> body, table, td {font-family: Arial, Helvetica, sans-serif !important;} </style> <![endif]--> <style>   body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background:#f7f8fa; }   table { border-spacing:0; }   td { padding:0; }   img { border:0; display:block; }   .wrapper { width:100%; table-layout:fixed; background:#f7f8fa; padding:40px 0; }   .main { margin:0 auto; width:100%; max-width:600px; background:#ffffff; box-shadow:0 4px 20px rgba(0,0,0,0.08); }      /* Header */   .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding:32px 28px; }   .header-icon { font-size:28px; margin-bottom:8px; }   .header-title { margin:0; font-size:26px; font-weight:700; color:#ffffff; letter-spacing:-0.5px; line-height:1.2; }   .header-date { margin:6px 0 0 0; font-size:13px; color:rgba(255,255,255,0.85); letter-spacing:0.3px; }      /* Stats */   .stats { background:#f9fafb; border-bottom:1px solid #e5e7eb; padding:24px 28px; }   .stats-grid { display:flex; justify-content:space-between; gap:16px; }   .stat { text-align:center; flex:1; }   .stat-num { margin:0 0 4px 0; font-size:36px; font-weight:800; color:#3b82f6; line-height:1; }   .stat-label { margin:0; font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:1px; font-weight:600; }      /* Priority banner */   .priority { background:#fef3c7; border-left:4px solid #f59e0b; padding:16px 20px; margin:20px 28px; border-radius:6px; }   .priority-text { margin:0; font-size:13px; color:#92400e; line-height:1.6; }   .priority-text strong { color:#78350f; font-weight:700; }      /* Section */   .section { padding:8px 28px 20px 28px; }   .section-title { margin:0 0 18px 0; font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:1.2px; }      /* Lead card */   .lead-card { background:#f9fafb; border-left:4px solid #3b82f6; padding:16px 18px; margin-bottom:12px; border-radius:6px; }   .lead-name { margin:0 0 6px 0; font-size:16px; font-weight:700; color:#111827; line-height:1.3; }   .lead-meta { margin:0 0 6px 0; font-size:13px; color:#6b7280; line-height:1.5; }   .lead-email { margin:0; font-size:12px; color:#9ca3af; font-family:'Courier New', monospace; letter-spacing:0.2px; }      /* Alert */   .alert { background:#eff6ff; border-left:4px solid #3b82f6; padding:18px 20px; margin:0 28px 24px 28px; border-radius:6px; }   .alert-title { margin:0 0 8px 0; font-size:14px; font-weight:700; color:#1e40af; }   .alert-list { margin:0; padding-left:20px; }   .alert-list li { font-size:13px; color:#1e40af; margin-bottom:6px; line-height:1.6; }      /* Footer */   .footer { background:#f9fafb; padding:24px 28px; text-align:center; border-top:1px solid #e5e7eb; }   .footer-text { margin:0; font-size:12px; color:#9ca3af; }   .footer-badge { display:inline-block; background:#3b82f6; color:#ffffff; font-size:9px; font-weight:700; letter-spacing:1px; padding:4px 10px; margin-top:10px; border-radius:3px; text-transform:uppercase; } </style> </head> <body> <center class=\"wrapper\">   <table class=\"main\" width=\"600\">     <!-- HEADER -->     <tr>       <td class=\"header\">         <div class=\"header-icon\">📧</div>         <h1 class=\"header-title\">Follow-Up 1 — Day 3</h1>         <p class=\"header-date\">{{ $now.toFormat('EEEE, dd MMMM yyyy · HH:mm') }}</p>       </td>     </tr>          <!-- STATS -->     <tr>       <td class=\"stats\">         <div class=\"stats-grid\">           <div class=\"stat\">             <p class=\"stat-num\">{{ $input.all().length }}</p>             <p class=\"stat-label\">Follow-Ups</p>           </div>           <div class=\"stat\">             <p class=\"stat-num\">Day 3</p>             <p class=\"stat-label\">Stage</p>           </div>           <div class=\"stat\">             <p class=\"stat-num\">+4 Days</p>             <p class=\"stat-label\">Next FU</p>           </div>         </div>       </td>     </tr>          <!-- PRIORITY BANNER -->     <tr>       <td>         <div class=\"priority\">           <p class=\"priority-text\"><strong>⚡ High Reply Window:</strong> Days 3–5 typically have the highest response rate. Check your inbox closely for incoming replies.</p>         </div>       </td>     </tr>          <!-- LEADS SECTION -->     <tr>       <td class=\"section\">         <p class=\"section-title\">Leads Followed Up Today</p>         {{ $input.all().map(item => `           <div class=\"lead-card\">             <p class=\"lead-name\">${item.json['Business Name']}</p>             <p class=\"lead-meta\">📍 ${item.json['Location'] || 'Location not specified'} · ${item.json['Keyword Search'] || 'Industry unknown'}</p>             <p class=\"lead-email\">${item.json['Email']}</p>           </div>         `).join('') }}       </td>     </tr>          <!-- NEXT STEPS -->     <tr>       <td>         <div class=\"alert\">           <h3 class=\"alert-title\">✅ What Happens Next</h3>           <ul class=\"alert-list\">             <li>Follow-Up 2 fires in <strong>4 more days</strong> (Day 7 total)</li>             <li>If someone replies → update status to <strong>'Replied'</strong></li>             <li>If they book a call → update status to <strong>'Call Booked'</strong></li>           </ul>         </div>       </td>     </tr>          <!-- FOOTER -->     <tr>       <td class=\"footer\">         <p class=\"footer-text\">Chint's Automation · Running on Schedule</p>         <span class=\"footer-badge\">Powered by NexaFlow</span>       </td>     </tr>   </table> </center> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        576
+      ],
+      "id": "922cf86c-8040-4a32-a305-4d7c963de0d4",
+      "name": "Send a message1",
+      "webhookId": "e3939711-303f-4681-bb34-322098afb4f9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KtpyNB3xehNN60Vf",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "koteswararaobommu4gmail.com",
+        "subject": "=🔴 [Day Report] Breakup Emails Sent — Sequence Complete — {{ $now.toFormat('dd MMM yyyy') }}",
+        "message": "=<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> <title>Day 14 Report — Sequence Complete</title> <!--[if mso]> <style type=\"text/css\"> body, table, td {font-family: Arial, Helvetica, sans-serif !important;} </style> <![endif]--> <style>   body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background:#f7f8fa; }   table { border-spacing:0; }   td { padding:0; }   img { border:0; display:block; }   .wrapper { width:100%; table-layout:fixed; background:#f7f8fa; padding:40px 0; }   .main { margin:0 auto; width:100%; max-width:600px; background:#ffffff; box-shadow:0 4px 20px rgba(0,0,0,0.08); }      /* Header */   .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding:32px 28px; }   .header-icon { font-size:28px; margin-bottom:8px; }   .header-title { margin:0; font-size:26px; font-weight:700; color:#ffffff; letter-spacing:-0.5px; line-height:1.2; }   .header-date { margin:6px 0 0 0; font-size:13px; color:rgba(255,255,255,0.85); letter-spacing:0.3px; }      /* Stats */   .stats { background:#f9fafb; border-bottom:1px solid #e5e7eb; padding:24px 28px; }   .stats-grid { display:flex; justify-content:space-between; gap:16px; }   .stat { text-align:center; flex:1; }   .stat-num { margin:0 0 4px 0; font-size:36px; font-weight:800; color:#ef4444; line-height:1; }   .stat-label { margin:0; font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:1px; font-weight:600; }      /* Section */   .section { padding:28px 28px 20px 28px; }   .section-title { margin:0 0 18px 0; font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:1.2px; }      /* Lead card */   .lead-card { background:#f9fafb; border-left:4px solid #ef4444; padding:16px 18px; margin-bottom:12px; border-radius:6px; }   .lead-name { margin:0 0 6px 0; font-size:16px; font-weight:700; color:#111827; line-height:1.3; }   .lead-meta { margin:0 0 6px 0; font-size:13px; color:#6b7280; line-height:1.5; }   .lead-email { margin:0; font-size:12px; color:#9ca3af; font-family:'Courier New', monospace; letter-spacing:0.2px; }      /* Health check */   .health { background:#fef2f2; border-left:4px solid #ef4444; padding:18px 20px; margin:0 28px 20px 28px; border-radius:6px; }   .health-title { margin:0 0 10px 0; font-size:14px; font-weight:700; color:#991b1b; }   .health-text { margin:0 0 10px 0; font-size:13px; color:#991b1b; line-height:1.6; }   .health-list { margin:0; padding-left:20px; }   .health-list li { font-size:13px; color:#991b1b; margin-bottom:5px; line-height:1.6; }      /* Success alert */   .success { background:#f0fdf4; border-left:4px solid #22c55e; padding:18px 20px; margin:0 28px 24px 28px; border-radius:6px; }   .success-title { margin:0 0 8px 0; font-size:14px; font-weight:700; color:#166534; }   .success-list { margin:0; padding-left:20px; }   .success-list li { font-size:13px; color:#166534; margin-bottom:6px; line-height:1.6; }      /* Footer */   .footer { background:#f9fafb; padding:24px 28px; text-align:center; border-top:1px solid #e5e7eb; }   .footer-text { margin:0; font-size:12px; color:#9ca3af; }   .footer-badge { display:inline-block; background:#ef4444; color:#ffffff; font-size:9px; font-weight:700; letter-spacing:1px; padding:4px 10px; margin-top:10px; border-radius:3px; text-transform:uppercase; } </style> </head> <body> <center class=\"wrapper\">   <table class=\"main\" width=\"600\">     <!-- HEADER -->     <tr>       <td class=\"header\">         <div class=\"header-icon\">✅</div>         <h1 class=\"header-title\">Sequence Complete — Day 14</h1>         <p class=\"header-date\">{{ $now.toFormat('EEEE, dd MMMM yyyy · HH:mm') }}</p>       </td>     </tr>          <!-- STATS -->     <tr>       <td class=\"stats\">         <div class=\"stats-grid\">           <div class=\"stat\">             <p class=\"stat-num\">{{ $input.all().length }}</p>             <p class=\"stat-label\">Completed</p>           </div>           <div class=\"stat\">             <p class=\"stat-num\">4</p>             <p class=\"stat-label\">Total Emails</p>           </div>           <div class=\"stat\">             <p class=\"stat-num\">14</p>             <p class=\"stat-label\">Days Elapsed</p>           </div>         </div>       </td>     </tr>          <!-- LEADS SECTION -->     <tr>       <td class=\"section\">         <p class=\"section-title\">Leads That Completed Full Sequence</p>         {{ $input.all().map(item => `           <div class=\"lead-card\">             <p class=\"lead-name\">${item.json['Business Name']}</p>             <p class=\"lead-meta\">📍 ${item.json['Location'] || 'Location not specified'} · ${item.json['Keyword Search'] || 'Industry unknown'}</p>             <p class=\"lead-email\">${item.json['Email']}</p>           </div>         `).join('') }}       </td>     </tr>          <!-- HEALTH CHECK -->     <tr>       <td>         <div class=\"health\">           <h3 class=\"health-title\">📊 Sequence Health Check</h3>           <p class=\"health-text\"><strong>If you're not seeing replies:</strong></p>           <ul class=\"health-list\">             <li>Reply rate below 3%? → Tweak your subject line and opening line</li>             <li>Target reply rate: <strong>5–10%</strong> for cold outreach</li>             <li>Check Lead Quality scores — are you targeting the right businesses?</li>           </ul>         </div>       </td>     </tr>          <!-- SUCCESS STEPS -->     <tr>       <td>         <div class=\"success\">           <h3 class=\"success-title\">✅ What Happens Next</h3>           <ul class=\"success-list\">             <li>These leads are now <strong>'Sequence Complete'</strong> — automation has stopped</li>             <li>Still watch your inbox for 48 hours — breakup emails often trigger late replies</li>             <li>In 30 days, consider a re-engage campaign with a completely new angle</li>             <li>Keep adding fresh leads to your sheet — the machine keeps running 🔄</li>           </ul>         </div>       </td>     </tr>          <!-- FOOTER -->     <tr>       <td class=\"footer\">         <p class=\"footer-text\">Chintu's Automation · Running on Schedule</p>         <span class=\"footer-badge\">Powered by NexaFlow</span>       </td>     </tr>   </table> </center> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        192
+      ],
+      "id": "e90bd114-4f66-4a6e-9ad9-58da1a9f5408",
+      "name": "Send a message2",
+      "webhookId": "8e2ec1f2-5f57-4a04-ace7-bbd2a0425d77",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KtpyNB3xehNN60Vf",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "koteswararaobommu4@gmail.com",
+        "subject": "=🟠 [Day Report] Follow-Up 2 Sent — {{ $now.toFormat('dd MMM yyyy') }}",
+        "message": "=<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> <title>Day 7 Report — Follow-Up 2 Sent</title> <!--[if mso]> <style type=\"text/css\"> body, table, td {font-family: Arial, Helvetica, sans-serif !important;} </style> <![endif]--> <style>   body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background:#f7f8fa; }   table { border-spacing:0; }   td { padding:0; }   img { border:0; display:block; }   .wrapper { width:100%; table-layout:fixed; background:#f7f8fa; padding:40px 0; }   .main { margin:0 auto; width:100%; max-width:600px; background:#ffffff; box-shadow:0 4px 20px rgba(0,0,0,0.08); }      /* Header */   .header { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding:32px 28px; }   .header-icon { font-size:28px; margin-bottom:8px; }   .header-title { margin:0; font-size:26px; font-weight:700; color:#ffffff; letter-spacing:-0.5px; line-height:1.2; }   .header-date { margin:6px 0 0 0; font-size:13px; color:rgba(255,255,255,0.85); letter-spacing:0.3px; }      /* Stats */   .stats { background:#f9fafb; border-bottom:1px solid #e5e7eb; padding:24px 28px; }   .stats-grid { display:flex; justify-content:space-between; gap:16px; }   .stat { text-align:center; flex:1; }   .stat-num { margin:0 0 4px 0; font-size:36px; font-weight:800; color:#f97316; line-height:1; }   .stat-label { margin:0; font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:1px; font-weight:600; }      /* Section */   .section { padding:28px 28px 20px 28px; }   .section-title { margin:0 0 18px 0; font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:1.2px; }      /* Lead card */   .lead-card { background:#f9fafb; border-left:4px solid #f97316; padding:16px 18px; margin-bottom:12px; border-radius:6px; }   .lead-name { margin:0 0 6px 0; font-size:16px; font-weight:700; color:#111827; line-height:1.3; }   .lead-meta { margin:0 0 6px 0; font-size:13px; color:#6b7280; line-height:1.5; }   .lead-email { margin:0; font-size:12px; color:#9ca3af; font-family:'Courier New', monospace; letter-spacing:0.2px; }      /* Tip box */   .tip { background:#f0f9ff; border-left:4px solid #0ea5e9; padding:16px 20px; margin:0 28px 20px 28px; border-radius:6px; }   .tip-text { margin:0; font-size:13px; color:#075985; line-height:1.6; }   .tip-text strong { color:#0c4a6e; font-weight:700; }      /* Alert */   .alert { background:#fff7ed; border-left:4px solid #f97316; padding:18px 20px; margin:0 28px 24px 28px; border-radius:6px; }   .alert-title { margin:0 0 8px 0; font-size:14px; font-weight:700; color:#9a3412; }   .alert-list { margin:0; padding-left:20px; }   .alert-list li { font-size:13px; color:#9a3412; margin-bottom:6px; line-height:1.6; }      /* Footer */   .footer { background:#f9fafb; padding:24px 28px; text-align:center; border-top:1px solid #e5e7eb; }   .footer-text { margin:0; font-size:12px; color:#9ca3af; }   .footer-badge { display:inline-block; background:#f97316; color:#ffffff; font-size:9px; font-weight:700; letter-spacing:1px; padding:4px 10px; margin-top:10px; border-radius:3px; text-transform:uppercase; } </style> </head> <body> <center class=\"wrapper\">   <table class=\"main\" width=\"600\">     <!-- HEADER -->     <tr>       <td class=\"header\">         <div class=\"header-icon\">📧</div>         <h1 class=\"header-title\">Follow-Up 2 — Day 7</h1>         <p class=\"header-date\">{{ $now.toFormat('EEEE, dd MMMM yyyy · HH:mm') }}</p>       </td>     </tr>          <!-- STATS -->     <tr>       <td class=\"stats\">         <div class=\"stats-grid\">           <div class=\"stat\">             <p class=\"stat-num\">{{ $input.all().length }}</p>             <p class=\"stat-label\">Follow-Ups</p>           </div>           <div class=\"stat\">             <p class=\"stat-num\">Day 7</p>             <p class=\"stat-label\">Stage</p>           </div>           <div class=\"stat\">             <p class=\"stat-num\">+7 Days</p>             <p class=\"stat-label\">Final Email</p>           </div>         </div>       </td>     </tr>          <!-- LEADS SECTION -->     <tr>       <td class=\"section\">         <p class=\"section-title\">Leads Followed Up Today</p>         {{ $input.all().map(item => `           <div class=\"lead-card\">             <p class=\"lead-name\">${item.json['Business Name']}</p>             <p class=\"lead-meta\">📍 ${item.json['Location'] || 'Location not specified'} · ${item.json['Keyword Search'] || 'Industry unknown'}</p>             <p class=\"lead-email\">${item.json['Email']}</p>           </div>         `).join('') }}       </td>     </tr>          <!-- TIP BOX -->     <tr>       <td>         <div class=\"tip\">           <p class=\"tip-text\"><strong>💡 Backup Channel Suggestion:</strong> These leads haven't replied to 2 emails. Consider checking their Instagram or Facebook page and sending a personalized DM as a channel switch.</p>         </div>       </td>     </tr>          <!-- NEXT STEPS -->     <tr>       <td>         <div class=\"alert\">           <h3 class=\"alert-title\">✅ What Happens Next</h3>           <ul class=\"alert-list\">             <li>Breakup email fires in <strong>7 more days</strong> (Day 14 total)</li>             <li>Breakup emails often trigger late replies — keep watching your inbox</li>             <li>These leads are approaching the end of the sequence</li>           </ul>         </div>       </td>     </tr>          <!-- FOOTER -->     <tr>       <td class=\"footer\">         <p class=\"footer-text\">Chintu's Automation · Running on Schedule</p>         <span class=\"footer-badge\">Powered by NexaFlow</span>       </td>     </tr>   </table> </center> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        384
+      ],
+      "id": "f4110be2-abaa-4385-a842-26ee7d740775",
+      "name": "Send a message3",
+      "webhookId": "c0d1d08e-15c2-49d5-98dd-22350f7bc455",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KtpyNB3xehNN60Vf",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "03658ee6-3935-4f23-a1a3-4241abf34f3c",
+              "leftValue": "={{ $json['Outreach Status'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2fe01c9a-60dc-44cb-830c-bfda48f0b8f9",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c3c5a170-f4e5-424f-9f4d-f90fedc9b7b1",
+              "leftValue": "={{ $json['Outreach Status'] }}",
+              "rightValue": "SENT",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        576
+      ],
+      "id": "49121ce3-c030-4355-b76a-7b4b57ea2207",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8b34bff8-e481-410a-90cd-c7418f0f473d",
+              "leftValue": "={{ $json['Outreach Status'] }}",
+              "rightValue": "Follow-Up 1 Sent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        384
+      ],
+      "id": "9d94ed31-bb23-4747-8f21-7f05251c8efb",
+      "name": "Filter2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a06d1dd6-6a1b-493c-9715-af85753c052c",
+              "leftValue": "={{ $json['Outreach Status'] }}",
+              "rightValue": "Follow-Up 2 Sent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        192
+      ],
+      "id": "f2bb62f8-3d18-47e7-a38c-b9baf39c0cab",
+      "name": "Filter3"
+    },
+    {
+      "parameters": {
+        "amount": 14,
+        "unit": "days"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        576
+      ],
+      "id": "0f276292-0f56-4d6e-a350-ffa75d9716d5",
+      "name": "Wait",
+      "webhookId": "d83b3dfc-0e8d-4f5e-81b6-5eb985fb8ca6"
+    },
+    {
+      "parameters": {
+        "amount": 7,
+        "unit": "days"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        384
+      ],
+      "id": "ef2263d2-890c-4d36-9652-a85f871bc322",
+      "name": "Wait1",
+      "webhookId": "81403112-fa89-45e0-961b-5af58f688e28"
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        192
+      ],
+      "id": "d04423f6-4668-4c5c-b975-6c45a47b9879",
+      "name": "Wait2",
+      "webhookId": "c08942f5-1f60-4e13-bb6b-6e47ecdcc8a1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "⏰ Daily Trigger (8am, Tue–Sat)": {
+      "main": [
+        [
+          {
+            "node": "📋 Get New Leads (Empty Status)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get New Leads (Empty Status)": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Has Valid Email?": {
+      "main": [
+        [
+          {
+            "node": "⭐ Lead Quality Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⭐ Lead Quality Filter": {
+      "main": [
+        [
+          {
+            "node": "📅 Calculate Follow-Up Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 Calculate Follow-Up Dates": {
+      "main": [
+        [
+          {
+            "node": "📧 Send Email 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Send Email 1": {
+      "main": [
+        [
+          {
+            "node": "📊 Update Sheet — Email 1 Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Follow-Up 1 Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 FU1 Due Today?": {
+      "main": [
+        [
+          {
+            "node": "📧 Send Follow-Up 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Send Follow-Up 1": {
+      "main": [
+        [
+          {
+            "node": "📊 Update Sheet — FU1 Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Follow-Up 2 Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 FU2 Due Today?": {
+      "main": [
+        [
+          {
+            "node": "📧 Send Follow-Up 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Send Follow-Up 2": {
+      "main": [
+        [
+          {
+            "node": "📊 Update Sheet — FU2 Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Breakup Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 Breakup Due Today?": {
+      "main": [
+        [
+          {
+            "node": "📧 Send Breakup Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Send Breakup Email": {
+      "main": [
+        [
+          {
+            "node": "📊 Update Sheet — Sequence Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Update Sheet — Email 1 Sent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Update Sheet — FU1 Sent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Update Sheet — FU2 Sent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Update Sheet — Sequence Complete": {
+      "main": [
+        [
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "🔍 Has Valid Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "📅 FU1 Due Today?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter2": {
+      "main": [
+        [
+          {
+            "node": "📅 FU2 Due Today?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter3": {
+      "main": [
+        [
+          {
+            "node": "📅 Breakup Due Today?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "📋 Get Follow-Up 1 Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "📋 Get Follow-Up 2 Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "📋 Get Breakup Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bb3a933f-26fc-4cc7-8f09-ef2b7a48dcb4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b44e41c427b0dbdd502233467d6b8629bf69bfae370f4b461d4bdb3a554d85c"
+  },
+  "id": "H8WUaKn3z2ot3Crg",
+  "tags": []
+}
